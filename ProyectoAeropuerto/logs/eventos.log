@@ -1,0 +1,8 @@
+[t=0] CARGA_INICIAL vuelos=5 pistas=2
+[t=0] EN_COLA id_vuelo=IB101 tipo=ATERRIZAJE
+[t=0] EN_COLA id_vuelo=IB202 tipo=ATERRIZAJE
+[t=0] EN_COLA id_vuelo=UX303 tipo=DESPEGUE
+[t=0] EN_COLA id_vuelo=VY404 tipo=DESPEGUE
+[t=0] EN_COLA id_vuelo=AF505 tipo=ATERRIZAJE
+[t=0] EN_COLA id_vuelo=ABS34 tipo=ATERRIZAJE
+[t=0] FIN_SIMULACION vuelos_atendidos=0
