@@ -4,5 +4,14 @@
 [t=0] EN_COLA id_vuelo=UX303 tipo=DESPEGUE
 [t=0] EN_COLA id_vuelo=VY404 tipo=DESPEGUE
 [t=0] EN_COLA id_vuelo=AF505 tipo=ATERRIZAJE
-[t=0] EN_COLA id_vuelo=ABS34 tipo=ATERRIZAJE
-[t=0] FIN_SIMULACION vuelos_atendidos=0
+[t=0] EMERGENCIA id_vuelo=AF505 prioridad=2 motivo=combustible<=5
+[t=0] ASIGNACION id_vuelo=AF505 pista=R1 tipo=ATERRIZAJE
+[t=0] ASIGNACION id_vuelo=IB202 pista=R2 tipo=ATERRIZAJE
+[t=3] COMPLETADO id_vuelo=AF505 pista=R1
+[t=3] COMPLETADO id_vuelo=IB202 pista=R1
+[t=3] ASIGNACION id_vuelo=IB101 pista=R1 tipo=ATERRIZAJE
+[t=3] ASIGNACION id_vuelo=UX303 pista=R2 tipo=DESPEGUE
+[t=6] COMPLETADO id_vuelo=IB101 pista=R1
+[t=6] COMPLETADO id_vuelo=UX303 pista=R1
+[t=6] ASIGNACION id_vuelo=VY404 pista=R1 tipo=DESPEGUE
+[t=9] COMPLETADO id_vuelo=VY404 pista=R1

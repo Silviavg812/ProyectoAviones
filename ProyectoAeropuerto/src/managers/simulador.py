@@ -4,6 +4,8 @@ Controlador principal de la simulación de aeropuerto.
 
 from __future__ import annotations
 from typing import Iterable
+import time
+import threading
 
 from src.managers.vuelos_manager import GestorVuelos
 from src.managers.pistas_manager import GestorPistas
@@ -20,13 +22,28 @@ class ControladorSimulacion:
     - Aplica prioridades y emergencias
     - Registra eventos en los logs
     """
-
+    def ejecutar_con_reloj_real(self, segundos_por_minuto: float = 5.0) -> None:
+        """
+        Modo automático: cada `segundos_por_minuto` segundos reales
+        avanza 1 minuto simulado.
+        """
+        self.en_simulacion = True
+        try:
+            while self.en_simulacion:
+                self.avanzar_minuto()
+                time.sleep(segundos_por_minuto)
+        except KeyboardInterrupt:
+            # Permite parar con Ctrl+C si se ejecuta este modo
+            self.finalizar_simulacion()
+    
     def __init__(self, gestor_logs: GestorLogs) -> None:
         self.tiempo_actual: int = 0
         self.gestor_vuelos = GestorVuelos()
         self.gestor_pistas = GestorPistas()
         self.gestor_logs = gestor_logs
         self.en_simulacion: bool = False
+        self._hilo_simulacion: threading.Thread | None = None
+        self._stop_event = threading.Event()
 
     # ------------------------------------------------------------------
     # Inicialización
@@ -155,21 +172,54 @@ class ControladorSimulacion:
         for _ in range(n):
             if not self.avanzar_minuto():
                 break
+    def _bucle_reloj_real(self, segundos_por_minuto: float) -> None:
+        """
+        Bucle interno que avanza la simulación en segundo plano.
+        """
+        self.en_simulacion = True
+        while not self._stop_event.is_set() and self.en_simulacion:
+            self.avanzar_minuto()
+            time.sleep(segundos_por_minuto)
 
+    def iniciar_reloj_real(self, segundos_por_minuto: float = 5.0) -> None:
+        """
+        Inicia la simulación automática en un hilo aparte.
+        """
+        if self._hilo_simulacion and self._hilo_simulacion.is_alive():
+            return  # ya está corriendo
+
+        self._stop_event.clear()
+        self._hilo_simulacion = threading.Thread(
+            target=self._bucle_reloj_real,
+            args=(segundos_por_minuto,),
+            daemon=True,
+        )
+        self._hilo_simulacion.start()
+
+    def detener_reloj_real(self) -> None:
+        """
+        Detiene el reloj real en segundo plano.
+        """
+        self._stop_event.set()
+        self.en_simulacion = False
+        if self._hilo_simulacion and self._hilo_simulacion.is_alive():
+            self._hilo_simulacion.join(timeout=1.0)
     # ------------------------------------------------------------------
     # Finalización e información
     # ------------------------------------------------------------------
+
 
     def finalizar_simulacion(self) -> None:
         """
         Marca la simulación como finalizada y registra el fin en el log.
         """
-        self.en_simulacion = False
+        self.detener_reloj_real()
         total = len(self.gestor_vuelos.vuelos_completados)
         self.gestor_logs.registrar_fin_simulacion(
             tiempo=self.tiempo_actual,
             vuelos_atendidos=total,
         )
+
 
     def obtener_estado_general(self) -> dict:
         """
@@ -183,3 +233,4 @@ class ControladorSimulacion:
                 [p for p in self.gestor_pistas.pistas.values() if p.habilitada]
             ),
         }
+        

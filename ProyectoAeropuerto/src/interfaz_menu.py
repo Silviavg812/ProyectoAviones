@@ -30,6 +30,7 @@ class MenuPrincipal:
     8) Generar informe.log
     9) Mostrar informe en pantalla
     10) Guardar estado y salir
+    11) EMPEZAR RELOJ
     """
 
     def __init__(self, ruta_datos: str, ruta_logs: str) -> None:
@@ -67,6 +68,7 @@ class MenuPrincipal:
         print("7. Ver estado de vuelos")
         print("8. Generar informe.log")
         print("9. Mostrar informe en pantalla")
+        print("11. EMPEZAR RELOJ")
         print("10. Guardar estado y salir")
         print("-" * 40)
 
@@ -211,6 +213,45 @@ class MenuPrincipal:
 
         self.controlador.avanzar_n_minutos(n)
         print(f"\n[✓] Avanzado a t={self.controlador.tiempo_actual}.")
+        # ------------------------------------------------------------------
+    # Modo reloj real en segundo plano
+    # ------------------------------------------------------------------
+
+    def _bucle_reloj_real(self, segundos_por_minuto: float) -> None:
+        """
+        Bucle interno que avanza la simulación en segundo plano.
+        """
+        self.en_simulacion = True
+        while not self._stop_event.is_set() and self.en_simulacion:
+            self.avanzar_minuto()
+            time.sleep(segundos_por_minuto)
+
+    def iniciar_reloj_real(self, segundos_por_minuto: float = 5.0) -> None:
+        """
+        Inicia la simulación automática en un hilo aparte.
+        """
+        if self._hilo_simulacion and self._hilo_simulacion.is_alive():
+            return  # ya está corriendo
+
+        self._stop_event.clear()
+        self._hilo_simulacion = threading.Thread(
+            target=self._bucle_reloj_real,
+            args=(segundos_por_minuto,),
+            daemon=True,
+        )
+        self._hilo_simulacion.start()
+
+    def detener_reloj_real(self) -> None:
+        """
+        Detiene el reloj real en segundo plano.
+        """
+        self._stop_event.set()
+        self.en_simulacion = False
+        if self._hilo_simulacion and self._hilo_simulacion.is_alive():
+            self._hilo_simulacion.join(timeout=1.0)
+            
+  
+
 
     def opcion_ver_pistas(self) -> None:
         """
@@ -289,6 +330,40 @@ class MenuPrincipal:
         print("\nSaliendo del simulador...")
         return False
 
+    def opcion_simulacion_automatica(self) -> None:
+        """
+        Opción 11: Inicia la simulación automática con reloj real.
+        Cada 5 segundos reales = 1 minuto simulado.
+        """
+        if not self._requiere_simulacion():
+            return
+
+        print("\n[SIMULACIÓN AUTOMÁTICA]")
+        print("Cada 5 segundos reales = 1 minuto simulado.")
+        print("Pulsa Ctrl+C en la consola para detener la simulación.\n")
+
+        # Llama al reloj real del controlador
+        self.controlador.ejecutar_con_reloj_real(segundos_por_minuto=5.0)
+    def opcion_iniciar_reloj_auto(self) -> None:
+        """
+        Opción 11: Inicia la simulación automática en segundo plano.
+        """
+        if not self._requiere_simulacion():
+            return
+
+        self.controlador.iniciar_reloj_real(segundos_por_minuto=5.0)
+        print("\n[✓] Reloj automático iniciado (5 s reales = 1 min simulado).")
+        print("Puedes seguir usando el menú; el tiempo seguirá avanzando.")
+
+    def opcion_detener_reloj_auto(self) -> None:
+        """
+        Opción 12: Detiene la simulación automática en segundo plano.
+        """
+        if not self._requiere_simulacion():
+            return
+
+        self.controlador.detener_reloj_real()
+        print("\n[✓] Reloj automático detenido.")
     # ------------------------------------------------------------------    
     # Bucle principal
     # ------------------------------------------------------------------
@@ -324,6 +399,8 @@ class MenuPrincipal:
                 self.opcion_mostrar_informe()
             elif opcion == "10":
                 seguir = self.opcion_guardar_y_salir()
+            elif opcion == "11":
+                self.opcion_iniciar_reloj_auto()
             else:
                 print("\n[!] Opción no válida.")
 
