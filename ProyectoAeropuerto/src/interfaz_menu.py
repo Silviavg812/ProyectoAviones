@@ -68,8 +68,8 @@ class MenuPrincipal:
         print("7. Ver estado de vuelos")
         print("8. Generar informe.log")
         print("9. Mostrar informe en pantalla")
-        print("11. EMPEZAR RELOJ")
         print("10. Guardar estado y salir")
+        print("11. EMPEZAR RELOJ")
         print("-" * 40)
 
     def _requiere_simulacion(self) -> bool:
@@ -217,41 +217,8 @@ class MenuPrincipal:
     # Modo reloj real en segundo plano
     # ------------------------------------------------------------------
 
-    def _bucle_reloj_real(self, segundos_por_minuto: float) -> None:
-        """
-        Bucle interno que avanza la simulación en segundo plano.
-        """
-        self.en_simulacion = True
-        while not self._stop_event.is_set() and self.en_simulacion:
-            self.avanzar_minuto()
-            time.sleep(segundos_por_minuto)
-
-    def iniciar_reloj_real(self, segundos_por_minuto: float = 5.0) -> None:
-        """
-        Inicia la simulación automática en un hilo aparte.
-        """
-        if self._hilo_simulacion and self._hilo_simulacion.is_alive():
-            return  # ya está corriendo
-
-        self._stop_event.clear()
-        self._hilo_simulacion = threading.Thread(
-            target=self._bucle_reloj_real,
-            args=(segundos_por_minuto,),
-            daemon=True,
-        )
-        self._hilo_simulacion.start()
-
-    def detener_reloj_real(self) -> None:
-        """
-        Detiene el reloj real en segundo plano.
-        """
-        self._stop_event.set()
-        self.en_simulacion = False
-        if self._hilo_simulacion and self._hilo_simulacion.is_alive():
-            self._hilo_simulacion.join(timeout=1.0)
+    
             
-  
-
 
     def opcion_ver_pistas(self) -> None:
         """
